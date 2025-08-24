@@ -1,122 +1,165 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_assignment/live_scores.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 import 'package:flutter/material.dart';
 
-void main() {
-  runApp(const MyApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+    return MaterialApp(debugShowCheckedModeBanner: false, home: MatchList());
+  }
+}
+
+class MatchList extends StatefulWidget {
+  const MatchList({super.key});
+
+  @override
+  State<MatchList> createState() => _MatchListState();
+}
+
+class _MatchListState extends State<MatchList> {
+  FirebaseFirestore db = FirebaseFirestore.instance;
+  List<LiveScores> _listOfScores = [];
+  final Stream<QuerySnapshot> _usersStream = FirebaseFirestore.instance
+      .collection("football")
+      .snapshots();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Match List", style: TextStyle(fontSize: 24)),
+        backgroundColor: Colors.blue,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      body: StreamBuilder(
+        stream: _usersStream,
+        builder: (context, asyncSnapshot) {
+          if (asyncSnapshot.hasError) {
+            return Center(child: Text(asyncSnapshot.error.toString()));
+          }
+          if (asyncSnapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          }
+          if (asyncSnapshot.hasData) {
+            _listOfScores.clear();
+
+            for (QueryDocumentSnapshot doc in asyncSnapshot.data!.docs) {
+              LiveScores liveScores = LiveScores(
+                id: doc.id,
+                team1_name: doc.get("team1_name"),
+                team2_name: doc.get("team2_name"),
+                team1_score: doc.get("team1_score"),
+                team2_score: doc.get("team2_score"),
+                time: {doc.get("time") as num}.toString(),
+                total_time: doc.get("total_time"),
+              );
+              _listOfScores.add(liveScores);
+            }
+            //setState(() {});
+          }
+          {
+            return ListView.builder(
+              itemCount: _listOfScores.length,
+              itemBuilder: (context, index) {
+                LiveScores liveScores = _listOfScores[index];
+                return ListTile(
+                  title: Text(liveScores.id),
+                  trailing: IconButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => DetailsScreen(
+                            id: liveScores.id,
+                            team1_name: liveScores.team1_name,
+                            team2_name: liveScores.team2_name,
+                            team1_score: liveScores.team1_score,
+                            team2_score: liveScores.team2_score,
+                            time: liveScores.time,
+                            total_time: liveScores.total_time,
+                          ),
+                        ),
+                      );
+                    },
+                    icon: Icon(Icons.arrow_right),
+                  ),
+                );
+              },
+            );
+          }
+        },
+      ),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+class DetailsScreen extends StatefulWidget {
+  final String id;
+  final String team1_name;
+  final String team2_name;
+  final int team1_score;
+  final int team2_score;
+  final String time;
+  final int total_time;
 
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+  const DetailsScreen({
+    super.key,
+    required this.id,
+    required this.team1_name,
+    required this.team2_name,
+    required this.team1_score,
+    required this.team2_score,
+    required this.time,
+    required this.total_time,
+  });
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<DetailsScreen> createState() => _DetailsScreenState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
-  }
-
+class _DetailsScreenState extends State<DetailsScreen> {
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+        title: Text(widget.id, style: TextStyle(fontSize: 24)),
+        backgroundColor: Colors.blue,
       ),
       body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
         child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Card(
+              elevation: 0,
+              margin: EdgeInsets.all(20),
+              child: Padding(
+                padding: const EdgeInsets.all(25.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(widget.id, style: TextStyle(fontSize: 30)),
+                    Text(
+                      "${widget.team1_score} : ${widget.team2_score}",
+                      style: TextStyle(fontSize: 34),
+                    ),
+                    Text("Time : ${widget.time}"),
+                    Text("Total Time : ${widget.total_time}"),
+                  ],
+                ),
+              ),
             ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }
