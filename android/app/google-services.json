@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "121397339944",
+    "project_id": "simple-app-assignment",
+    "storage_bucket": "simple-app-assignment.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:121397339944:android:588b9a3075b243daa1521d",
+        "android_client_info": {
+          "package_name": "com.sumon.firebase_assignment.firebase_assignment"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA4-apjwF6Hc0LdOD08bwkeZE52oQd_lc0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
